@@ -20,6 +20,7 @@ class SumIf(AggregationPrimitive):
     return_type = ColumnSchema(semantic_tags={"numeric"})
     stack_on_self = False
     default_value = 0
+    description_template = "the sum of {} where {}"
 ```
 
 ### Extending AggregationPrimitive
