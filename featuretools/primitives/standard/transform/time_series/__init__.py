@@ -20,6 +20,9 @@ from featuretools.primitives.standard.transform.time_series.rolling_outlier_coun
 from featuretools.primitives.standard.transform.time_series.rolling_std import (
     RollingSTD,
 )
+from featuretools.primitives.standard.transform.time_series.rolling_sum import (
+    RollingSum,
+)
 from featuretools.primitives.standard.transform.time_series.rolling_trend import (
     RollingTrend,
 )
@@ -31,3 +34,22 @@ from featuretools.primitives.standard.transform.time_series.expanding import (
     ExpandingSTD,
     ExpandingTrend,
 )
+
+__all__ = [
+    "Lag",
+    "NumericLag",
+    "RollingCount",
+    "RollingMax",
+    "RollingMean",
+    "RollingMin",
+    "RollingOutlierCount",
+    "RollingSTD",
+    "RollingSum",
+    "RollingTrend",
+    "ExpandingCount",
+    "ExpandingMax",
+    "ExpandingMean",
+    "ExpandingMin",
+    "ExpandingSTD",
+    "ExpandingTrend",
+]

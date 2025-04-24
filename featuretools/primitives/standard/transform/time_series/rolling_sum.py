@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from woodwork.column_schema import ColumnSchema
 from woodwork.logical_types import Datetime, Double
@@ -8,13 +9,14 @@ from featuretools.primitives.standard.transform.time_series.utils import (
 )
 
 
-class RollingCount(TransformPrimitive):
-    """Determines a rolling count of events over a given window.
+class RollingSum(TransformPrimitive):
+    """Determines the sum of entries over a given window.
 
     Description:
-        Given a list of datetimes, return a rolling count starting
-        at the row `gap` rows away from the current row and looking backward over the specified
-        time window (by `window_length` and `gap`).
+        Given a list of numbers and a corresponding list of
+        datetimes, return a rolling sum of the numeric values,
+        starting at the row `gap` rows away from the current row and looking backward
+        over the specified window (by `window_length` and `gap`).
 
         Input datetimes should be monotonic.
 
@@ -40,7 +42,7 @@ class RollingCount(TransformPrimitive):
             Defaults to 1.
 
     Note:
-        Only offset aliases with fixed frequencies can be used when defining gap and h.
+        Only offset aliases with fixed frequencies can be used when defining gap and window_length.
         This means that aliases such as `M` or `W` cannot be used, as they can indicate different
         numbers of days. ('M', because different months have different numbers of days;
         'W' because week will indicate a certain day of the week, like W-Wed, so that will
@@ -54,38 +56,41 @@ class RollingCount(TransformPrimitive):
 
     Examples:
         >>> import pandas as pd
-        >>> rolling_count = RollingCount(window_length=3)
+        >>> rolling_sum = RollingSum(window_length=3)
         >>> times = pd.date_range(start='2019-01-01', freq='1min', periods=5)
-        >>> rolling_count(times).tolist()
-        [nan, 1.0, 2.0, 3.0, 3.0]
+        >>> rolling_sum(times, [4, 3, 2, 1, 0]).tolist()
+        [nan, 4.0, 7.0, 9.0, 6.0]
 
         We can also control the gap before the rolling calculation.
 
         >>> import pandas as pd
-        >>> rolling_count = RollingCount(window_length=3, gap=0)
+        >>> rolling_sum = RollingSum(window_length=3, gap=0)
         >>> times = pd.date_range(start='2019-01-01', freq='1min', periods=5)
-        >>> rolling_count(times).tolist()
-        [1.0, 2.0, 3.0, 3.0, 3.0]
+        >>> rolling_sum(times, [4, 3, 2, 1, 0]).tolist()
+        [4.0, 7.0, 9.0, 6.0, 3.0]
 
         We can also control the minimum number of periods required for the rolling calculation.
 
         >>> import pandas as pd
-        >>> rolling_count = RollingCount(window_length=3, min_periods=3, gap=0)
+        >>> rolling_sum = RollingSum(window_length=3, min_periods=3, gap=0)
         >>> times = pd.date_range(start='2019-01-01', freq='1min', periods=5)
-        >>> rolling_count(times).tolist()
-        [nan, nan, 3.0, 3.0, 3.0]
+        >>> rolling_sum(times, [4, 3, 2, 1, 0]).tolist()
+        [nan, nan, 9.0, 6.0, 3.0]
 
         We can also set the window_length and gap using offset alias strings.
-        >>> import pandas as pd
-        >>> rolling_count = RollingCount(window_length='3min', gap='1min')
-        >>> times = pd.date_range(start='2019-01-01', freq='1min', periods=5)
-        >>> rolling_count(times).tolist()
-        [nan, 1.0, 2.0, 3.0, 3.0]
 
+        >>> import pandas as pd
+        >>> rolling_sum = RollingSum(window_length='3min', gap='1min')
+        >>> times = pd.date_range(start='2019-01-01', freq='1min', periods=5)
+        >>> rolling_sum(times, [4, 3, 2, 1, 0]).tolist()
+        [nan, 4.0, 7.0, 9.0, 6.0]
     """
 
-    name = "rolling_count"
-    input_types = [ColumnSchema(logical_type=Datetime, semantic_tags={"time_index"})]
+    name = "rolling_sum"
+    input_types = [
+        ColumnSchema(logical_type=Datetime, semantic_tags={"time_index"}),
+        ColumnSchema(semantic_tags={"numeric"}),
+    ]
     return_type = ColumnSchema(logical_type=Double, semantic_tags={"numeric"})
     uses_full_dataframe = True
 
@@ -95,15 +100,15 @@ class RollingCount(TransformPrimitive):
         self.min_periods = min_periods
 
     def get_function(self):
-        def rolling_count(datetime):
-            x = pd.Series(1, index=datetime)
+        def rolling_sum(datetime, numeric):
+            x = pd.Series(numeric.values, index=datetime.values)
             return apply_rolling_agg_to_series(
                 x,
-                lambda series: series.count(),
+                np.sum,
                 self.window_length,
                 self.gap,
-                self.min_periods,
+                self.min_periods or 1,
                 ignore_window_nans=True,
             )
 
-        return rolling_count
+        return rolling_sum 

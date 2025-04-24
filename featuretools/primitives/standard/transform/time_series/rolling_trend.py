@@ -75,7 +75,7 @@ class RollingTrend(TransformPrimitive):
     return_type = ColumnSchema(logical_type=Double, semantic_tags={"numeric"})
     uses_full_dataframe = True
 
-    def __init__(self, window_length=3, gap=1, min_periods=0):
+    def __init__(self, window_length=3, gap=1, min_periods=1):
         self.window_length = window_length
         self.gap = gap
         self.min_periods = min_periods

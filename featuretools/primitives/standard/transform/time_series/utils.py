@@ -55,6 +55,9 @@ def roll_series_with_gap(
         # since the gap will be the same number of rows for the whole dataset
         series = series.shift(gap)
 
+    # Treat min_periods=0 the same as min_periods=1
+    min_periods = min_periods or 1
+
     return series.rolling(functional_window_length, min_periods)
 
 
@@ -109,7 +112,7 @@ def apply_roll_with_offset_gap(
     """
     window = _get_rolled_series_without_gap(window, gap_offset)
 
-    if min_periods is None:
+    if min_periods is None or min_periods == 0:
         min_periods = 1
 
     if len(window) < min_periods or not len(window):
