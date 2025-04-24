@@ -117,3 +117,4 @@ from featuretools.primitives.standard.aggregation.time_since_last_false import (
 )
 from featuretools.primitives.standard.aggregation.trend import Trend
 from featuretools.primitives.standard.aggregation.variance import Variance
+from featuretools.primitives.standard.aggregation.sum_if_primitive import SumIf

@@ -171,6 +171,7 @@ def get_default_aggregation_primitives():
         featuretools.primitives.PercentTrue,
         featuretools.primitives.NumUnique,
         featuretools.primitives.Mode,
+        featuretools.primitives.SumIf,
     ]
     return agg_primitives
 

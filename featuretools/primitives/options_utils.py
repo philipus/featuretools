@@ -19,6 +19,8 @@ def _get_primitive_options():
         "include_groupby_dataframes": list_dataframe_check,
         "ignore_groupby_columns": dict_to_list_column_check,
         "include_groupby_columns": dict_to_list_column_check,
+        "condition": lambda x, es: callable(x),
+        "condition_name": lambda x, es: isinstance(x, str),
     }
 
 

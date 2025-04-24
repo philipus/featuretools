@@ -8,8 +8,10 @@ import pytest
 from woodwork.column_schema import ColumnSchema
 from woodwork.logical_types import Datetime
 
+import featuretools as ft
 from featuretools import (
     AggregationFeature,
+    EntitySet,
     Feature,
     IdentityFeature,
     Timedelta,
@@ -28,6 +30,7 @@ from featuretools.primitives import (
     NumTrue,
     NumUnique,
     Sum,
+    SumIf,
     TimeSinceFirst,
     TimeSinceLast,
     get_aggregation_primitives,
@@ -812,3 +815,92 @@ def test_override_multi_feature_names(es):
 
     for name in expected_names:
         assert name in fm.columns
+
+
+def test_sum_if_primitive():
+    """Test SumIf primitive with simple condition"""
+    es = ft.EntitySet()
+    
+    # Create customers dataframe
+    customers_df = pd.DataFrame({
+        "id": [1, 2]
+    })
+    es.add_dataframe(
+        dataframe_name="customers",
+        dataframe=customers_df,
+        index="id"
+    )
+    
+    # Create transactions dataframe
+    transactions_df = pd.DataFrame({
+        "id": [1, 2, 3, 4, 5],
+        "value": [1, -2, 3, -4, 5],
+        "customer_id": [1, 1, 2, 2, 2]
+    })
+    es.add_dataframe(
+        dataframe_name="transactions",
+        dataframe=transactions_df,
+        index="id"
+    )
+    
+    # Add relationship from customers to transactions
+    es.add_relationship("customers", "id", "transactions", "customer_id")
+    
+    # Create SumIf primitive with condition
+    sum_if = ft.primitives.SumIf(condition=lambda x: x > 0, condition_name="positive")
+    
+    feature_matrix, features = ft.dfs(
+        entityset=es,
+        target_dataframe_name="customers",
+        agg_primitives=[sum_if],
+    )
+    
+    assert len(features) == 1
+    assert features[0].get_name() == "SUM_IF(transactions.value, condition=positive)"
+    assert feature_matrix["SUM_IF(transactions.value, condition=positive)"].tolist() == [1, 8]
+
+
+def test_sum_if_primitive_with_complex_condition():
+    """Test SumIf primitive with complex condition"""
+    es = ft.EntitySet()
+    
+    # Create customers dataframe
+    customers_df = pd.DataFrame({
+        "id": [1, 2]
+    })
+    es.add_dataframe(
+        dataframe_name="customers",
+        dataframe=customers_df,
+        index="id"
+    )
+    
+    # Create transactions dataframe
+    transactions_df = pd.DataFrame({
+        "id": [1, 2, 3, 4, 5],
+        "value": [1, -2, 3, -4, 5],
+        "customer_id": [1, 1, 2, 2, 2]
+    })
+    es.add_dataframe(
+        dataframe_name="transactions",
+        dataframe=transactions_df,
+        index="id"
+    )
+    
+    # Add relationship from customers to transactions
+    es.add_relationship("customers", "id", "transactions", "customer_id")
+    
+    # Create SumIf primitive with complex condition
+    sum_if = ft.primitives.SumIf(
+        condition=lambda x: (x > 0) & (x < 4),
+        condition_name="small_positive"
+    )
+    
+    feature_matrix, features = ft.dfs(
+        entityset=es,
+        target_dataframe_name="customers",
+        agg_primitives=[sum_if],
+    )
+    
+    assert len(features) == 1
+    assert features[0].get_name() == "SUM_IF(transactions.value, condition=small_positive)"
+    assert feature_matrix["SUM_IF(transactions.value, condition=small_positive)"].tolist() == [1, 3]
